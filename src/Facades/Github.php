@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static \Saloon\Http\Response deleteRepo(string $fullName)
  * @method static self forInstallation(int $installationId)
  * @method static self withApp(string $appId, string $privateKey, ?int $installationId = null)
+ * @method static self cache(\JordanPartridge\GithubClient\Cache\CacheStore $store, int $ttl = 3600)
  *
  * @see \JordanPartridge\GithubClient\Github
  */

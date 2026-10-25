@@ -3,6 +3,7 @@
 namespace JordanPartridge\GithubClient;
 
 use JordanPartridge\GithubClient\Connectors\GithubConnector;
+use JordanPartridge\GithubClient\Cache\CacheStore;
 use JordanPartridge\GithubClient\Data\RateLimitDTO;
 use JordanPartridge\GithubClient\Data\Repos\RepoData;
 use JordanPartridge\GithubClient\Exceptions\ApiException;
@@ -258,5 +259,19 @@ class Github
         }
 
         return null;
+    }
+
+    /**
+     * Enable caching for this GitHub client instance.
+     *
+     * @param  \JordanPartridge\GithubClient\Cache\CacheStore  $store  The cache store to use
+     * @param  int  $ttl  Default TTL in seconds (default: 1 hour)
+     * @return self
+     */
+    public function cache(CacheStore $store, int $ttl = 3600): self
+    {
+        $this->connector->setCacheStore($store, $ttl);
+
+        return $this;
     }
 }

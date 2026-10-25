@@ -10,7 +10,10 @@ use JordanPartridge\GithubClient\Exceptions\AuthenticationException;
 use JordanPartridge\GithubClient\Exceptions\NetworkException;
 use JordanPartridge\GithubClient\Exceptions\RateLimitException;
 use JordanPartridge\GithubClient\Exceptions\ResourceNotFoundException;
+use JordanPartridge\GithubClient\Cache\CacheStore;
 use JordanPartridge\GithubClient\Exceptions\ValidationException;
+use JordanPartridge\GithubClient\Http\Middleware\CacheResponseMiddleware;
+use Saloon\Config;
 use Saloon\Contracts\Authenticator;
 use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Http\Connector;
@@ -33,6 +36,8 @@ class GithubConnector extends Connector
     protected ?string $token;
     protected ?string $tokenSource;
     protected ?AuthenticationStrategy $authStrategy = null;
+    protected ?CacheStore $cacheStore = null;
+    protected int $defaultCacheTtl = 3600;
 
     /**
      * Create a new GitHub connector.
@@ -58,6 +63,43 @@ class GithubConnector extends Connector
             $this->token = TokenResolver::resolve();
             $this->tokenSource = $this->token ? TokenResolver::getLastSource() : null;
         }
+
+        // Set up global middleware for caching
+        $this->setupCacheMiddleware();
+    }
+
+    /**
+     * Set the cache store for this connector.
+     */
+    public function setCacheStore(CacheStore $cacheStore, int $defaultTtl = 3600): self
+    {
+        $this->cacheStore = $cacheStore;
+        $this->defaultCacheTtl = $defaultTtl;
+
+        // Re-setup middleware with the new cache store
+        $this->setupCacheMiddleware();
+
+        return $this;
+    }
+
+    /**
+     * Setup the cache middleware globally.
+     */
+    protected function setupCacheMiddleware(): void
+    {
+        if ($this->cacheStore === null) {
+            return;
+        }
+
+        Config::globalMiddleware()->onRequest(new CacheResponseMiddleware($this->cacheStore, $this->defaultCacheTtl));
+    }
+
+    /**
+     * Get the cache store if set.
+     */
+    public function getCacheStore(): ?CacheStore
+    {
+        return $this->cacheStore;
     }
 
     /**
