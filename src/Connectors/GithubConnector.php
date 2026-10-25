@@ -11,9 +11,12 @@ use JordanPartridge\GithubClient\Exceptions\NetworkException;
 use JordanPartridge\GithubClient\Exceptions\RateLimitException;
 use JordanPartridge\GithubClient\Exceptions\ResourceNotFoundException;
 use JordanPartridge\GithubClient\Exceptions\ValidationException;
+use JordanPartridge\GithubClient\Logging\GithubLogger;
 use Saloon\Contracts\Authenticator;
 use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Http\Connector;
+use Saloon\Http\Faking\MockClient;
+use Saloon\Http\Request;
 use Saloon\Http\Response;
 use Saloon\Traits\Plugins\AcceptsJson;
 
@@ -33,14 +36,17 @@ class GithubConnector extends Connector
     protected ?string $token;
     protected ?string $tokenSource;
     protected ?AuthenticationStrategy $authStrategy = null;
+    protected ?GithubLogger $logger = null;
 
     /**
      * Create a new GitHub connector.
      *
      * @param  string|AuthenticationStrategy|null  $token  Token, auth strategy, or null to auto-resolve
      */
-    public function __construct(string|AuthenticationStrategy|null $token = null)
-    {
+    public function __construct(
+        string|AuthenticationStrategy|null $token = null,
+        ?GithubLogger $logger = null
+    ) {
         if ($token instanceof AuthenticationStrategy) {
             $this->authStrategy = $token;
             $this->token = null;
@@ -58,6 +64,8 @@ class GithubConnector extends Connector
             $this->token = TokenResolver::resolve();
             $this->tokenSource = $this->token ? TokenResolver::getLastSource() : null;
         }
+
+        $this->logger = $logger ?? new GithubLogger();
     }
 
     /**
@@ -89,7 +97,7 @@ class GithubConnector extends Connector
         if ($this->authStrategy) {
             // Check if token needs refresh
             if ($this->authStrategy->needsRefresh()) {
-                $this->authStrategy->refresh();
+                $this->refreshAuthToken();
             }
 
             // Get the authorization header value
@@ -311,5 +319,110 @@ class GithubConnector extends Connector
             field: $errors[0]['field'] ?? null,
             value: $errors[0]['value'] ?? null,
         );
+    }
+
+    /**
+     * Send a request with event logging.
+     *
+     * This wraps the parent send method to log request start, completion, and error events.
+     * Request/response bodies are not logged to avoid logging sensitive data.
+     *
+     * @param  Request  $request  The request to send
+     * @param  MockClient|null  $mockClient  Optional mock client
+     * @param  callable|null  $handleRetry  Optional retry handler
+     * @return Response The response from the API
+     */
+    public function send(Request $request, ?MockClient $mockClient = null, ?callable $handleRetry = null): Response
+    {
+        $startTime = microtime(true);
+        $requestClass = $request::class;
+
+        // Log request start (no sensitive data here)
+        $this->logger->logRequestStart($requestClass, [
+            'endpoint' => $request->resolveEndpoint(),
+            'method' => $request->getMethod()->value,
+        ]);
+
+        try {
+            $response = parent::send($request, $mockClient, $handleRetry);
+            $duration = microtime(true) - $startTime;
+
+            // Log request completion (status only, no body)
+            $this->logger->logRequestComplete($requestClass, $response->status(), $duration, [
+                'endpoint' => $request->resolveEndpoint(),
+                'status' => $response->status(),
+            ]);
+
+            return $response;
+        } catch (\Throwable $exception) {
+            $duration = microtime(true) - $startTime;
+
+            // Log request error (exception details only, no request body)
+            $this->logger->logRequestError($requestClass, $exception, [
+                'endpoint' => $request->resolveEndpoint(),
+                'duration_seconds' => $duration,
+            ]);
+
+            throw $exception;
+        }
+    }
+
+    /**
+     * Refresh authentication token with event logging.
+     *
+     * @return void
+     */
+    public function refreshAuthToken(): void
+    {
+        if (! $this->authStrategy) {
+            return;
+        }
+
+        $startTime = microtime(true);
+        $strategyClass = $this->authStrategy::class;
+
+        // Log authentication refresh start
+        $this->logger->logAuthenticationRefresh($strategyClass, [
+            'action' => 'refresh_started',
+        ]);
+
+        try {
+            $this->authStrategy->refresh();
+            $duration = microtime(true) - $startTime;
+
+            // Log successful refresh
+            $this->logger->logAuthenticationRefresh($strategyClass, [
+                'action' => 'refresh_completed',
+                'duration_seconds' => $duration,
+            ]);
+        } catch (\Throwable $exception) {
+            $duration = microtime(true) - $startTime;
+
+            // Log refresh error
+            $this->logger->logAuthenticationRefresh($strategyClass, [
+                'action' => 'refresh_failed',
+                'duration_seconds' => $duration,
+                'exception' => get_class($exception),
+            ]);
+
+            throw $exception;
+        }
+    }
+
+    /**
+     * Get the logger instance.
+     */
+    public function getLogger(): GithubLogger
+    {
+        return $this->logger ?? new GithubLogger();
+    }
+
+    /**
+     * Set the logger instance.
+     */
+    public function setLogger(GithubLogger $logger): self
+    {
+        $this->logger = $logger;
+        return $this;
     }
 }

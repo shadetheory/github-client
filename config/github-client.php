@@ -47,4 +47,17 @@ return [
 
         'private_key_path' => env('GITHUB_APP_PRIVATE_KEY_PATH'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Logging
+    |--------------------------------------------------------------------------
+    |
+    | Configure PSR-3 logger integration for event logging.
+    | The logger receives events like request start, completion, errors,
+    | and authentication refreshes. Request/response bodies are NOT logged
+    | to avoid logging sensitive data.
+    |
+    */
+    'logger' => env('GITHUB_LOGGER', null),
 ];
