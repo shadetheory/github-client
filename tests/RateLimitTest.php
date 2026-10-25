@@ -217,3 +217,24 @@ describe('RateLimitDTO', function () {
             ->and($array['resource'])->toBe('core');
     });
 });
+
+describe('Rate Limit Retry', function () {
+    it('has retry configuration on connector', function () {
+        $github = app(Github::class);
+        $connector = $github->connector();
+
+        expect($connector)->toHaveProperty('tries')
+            ->and($connector->tries)->toBeNull() // Default is null (use Saloon default)
+            ->and($connector->retryInterval)->toBe(1000)
+            ->and($connector->useExponentialBackoff)->toBeTrue()
+            ->and($connector->throwOnMaxTries)->toBeTrue();
+    });
+
+    it('has handleRetry method for rate limits', function () {
+        $github = app(Github::class);
+        $connector = $github->connector();
+
+        // Test that handleRetry method exists
+        expect(method_exists($connector, 'handleRetry'))->toBeTrue();
+    });
+});

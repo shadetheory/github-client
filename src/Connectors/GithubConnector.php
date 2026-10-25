@@ -12,8 +12,11 @@ use JordanPartridge\GithubClient\Exceptions\RateLimitException;
 use JordanPartridge\GithubClient\Exceptions\ResourceNotFoundException;
 use JordanPartridge\GithubClient\Exceptions\ValidationException;
 use Saloon\Contracts\Authenticator;
+use Saloon\Exceptions\Request\FatalRequestException;
+use Saloon\Exceptions\Request\RequestException;
 use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Http\Connector;
+use Saloon\Http\Request;
 use Saloon\Http\Response;
 use Saloon\Traits\Plugins\AcceptsJson;
 
@@ -33,6 +36,27 @@ class GithubConnector extends Connector
     protected ?string $token;
     protected ?string $tokenSource;
     protected ?AuthenticationStrategy $authStrategy = null;
+
+    /**
+     * The number of times a request should be retried if a failure response is returned.
+     */
+    public ?int $tries = null;
+
+    /**
+     * The interval in milliseconds Saloon should wait between retries.
+     * For rate limits, we'll use 1 second as base interval.
+     */
+    public ?int $retryInterval = 1000;
+
+    /**
+     * Should Saloon use exponential backoff during retries?
+     */
+    public ?bool $useExponentialBackoff = true;
+
+    /**
+     * Should Saloon throw an exception after exhausting the maximum number of retries?
+     */
+    public ?bool $throwOnMaxTries = true;
 
     /**
      * Create a new GitHub connector.
@@ -282,6 +306,28 @@ class GithubConnector extends Connector
             totalLimit: $limit,
             message: $helpMessage,
         );
+    }
+
+    /**
+     * Determine if a request should be retried.
+     *
+     * This method is called when a request fails and determines whether
+     * the request should be retried based on the exception type.
+     */
+    public function handleRetry(FatalRequestException|RequestException $exception, Request $request): bool
+    {
+        // Check if the exception is a rate limit exception
+        if ($exception instanceof RateLimitException) {
+            return true;
+        }
+
+        // Check if the exception response has a 429 status code
+        $response = $exception->getResponse();
+        if ($response && $response->status() === 429) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

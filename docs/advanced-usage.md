@@ -55,6 +55,30 @@ GITHUB_APP_PRIVATE_KEY_PATH=
 
 There is no `withRateLimiting()` helper and no `Github::fake()`. In tests, call `Github::connector()->withMockClient()` with a Saloon `MockClient`. The mock body has to include the fields the DTO constructor reads. See `tests/DocumentationExamplesTest.php`.
 
+## Automatic Retries with Exponential Backoff
+
+The connector has automatic retry logic for rate limit errors (HTTP 429) with exponential backoff:
+
+```php
+use JordanPartridge\GithubClient\Facades\Github;
+
+$connector = Github::connector();
+
+// Configure retry behavior
+$connector->tries = 3;                 // Maximum retry attempts
+$connector->retryInterval = 1000;      // Base interval in milliseconds (default: 1000ms)
+$connector->useExponentialBackoff = true; // True to double interval after each retry
+$connector->throwOnMaxTries = true;    // Throw exception after exhausting retries
+```
+
+When rate limited, the connector will:
+1. Detect the rate limit exception (429 status or RateLimitException)
+2. Wait using exponential backoff (1s, 2s, 4s, ...)
+3. Retry the request up to `$tries` times
+4. Throw the exception if all retries fail
+
+This prevents immediate retries that would just hit the rate limit again, giving time for the rate limit window to reset.
+
 ## What the config file does not do
 
 These are not implemented. They are not in the published config.
