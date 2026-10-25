@@ -248,3 +248,58 @@ describe('auto-pagination functionality', function () {
             ->toThrow(RuntimeException::class, 'Maximum page limit (1000) exceeded during pagination');
     });
 });
+
+describe('languages functionality', function () {
+    it('can get languages for a repository', function () {
+        $mockLanguagesResponse = [
+            'PHP' => 1234567,
+            'JavaScript' => 890123,
+            'CSS' => 45678,
+        ];
+
+        $mockClient = new MockClient([
+            '*' => MockResponse::make($mockLanguagesResponse, 200),
+        ]);
+        Github::connector()->withMockClient($mockClient);
+
+        $languages = Github::repos()->languages(\JordanPartridge\GithubClient\ValueObjects\Repo::fromFullName('testuser/test-repo'));
+
+        expect($languages)
+            ->toBeArray()
+            ->toHaveKey('PHP')
+            ->and($languages['PHP'])->toBe(1234567)
+            ->and($languages['JavaScript'])->toBe(890123)
+            ->and($languages['CSS'])->toBe(45678);
+    });
+
+    it('can get languages using the convenience method', function () {
+        $mockLanguagesResponse = [
+            'PHP' => 987654,
+            'TypeScript' => 321098,
+        ];
+
+        $mockClient = new MockClient([
+            '*' => MockResponse::make($mockLanguagesResponse, 200),
+        ]);
+        Github::connector()->withMockClient($mockClient);
+
+        $languages = Github::getLanguages('testuser/test-repo');
+
+        expect($languages)
+            ->toBeArray()
+            ->toHaveKey('PHP')
+            ->and($languages['PHP'])->toBe(987654)
+            ->and($languages['TypeScript'])->toBe(321098);
+    });
+
+    it('handles empty languages response', function () {
+        $mockClient = new MockClient([
+            '*' => MockResponse::make([], 200),
+        ]);
+        Github::connector()->withMockClient($mockClient);
+
+        $languages = Github::repos()->languages(\JordanPartridge\GithubClient\ValueObjects\Repo::fromFullName('testuser/test-repo'));
+
+        expect($languages)->toBeArray()->toHaveCount(0);
+    });
+});

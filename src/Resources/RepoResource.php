@@ -11,6 +11,7 @@ use JordanPartridge\GithubClient\Enums\Visibility;
 use JordanPartridge\GithubClient\Requests\Repos\Delete;
 use JordanPartridge\GithubClient\Requests\Repos\Get;
 use JordanPartridge\GithubClient\Requests\Repos\Index;
+use JordanPartridge\GithubClient\Requests\Repos\Languages;
 use JordanPartridge\GithubClient\Requests\Repos\Search;
 use JordanPartridge\GithubClient\ValueObjects\Repo;
 use Saloon\Http\Response;
@@ -187,6 +188,25 @@ readonly class RepoResource extends BaseResource
     public function delete(Repo $repo): Response
     {
         return $this->github()->connector()->send(new Delete($repo));
+    }
+
+    /**
+     * Get the list of languages for a repository
+     *
+     * @param  Repo  $repo  The repository to get languages for
+     * @return array<string, int> Associative array of language names to byte counts
+     *
+     * @link https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-repository-languages
+     *
+     * Example Usage:
+     * ```php
+     * $languages = Github::repos()->languages(Repo::fromFullName('laravel/framework'));
+     * echo $languages['PHP']; // 1234567
+     * ```
+     */
+    public function languages(Repo $repo): array
+    {
+        return $this->github()->connector()->send(new Languages($repo))->json();
     }
 
     /**

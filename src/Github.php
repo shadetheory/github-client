@@ -8,6 +8,7 @@ use JordanPartridge\GithubClient\Data\Repos\RepoData;
 use JordanPartridge\GithubClient\Exceptions\ApiException;
 use JordanPartridge\GithubClient\Exceptions\NetworkException;
 use JordanPartridge\GithubClient\Requests\RateLimit\Get;
+use JordanPartridge\GithubClient\Requests\Repos\Languages;
 use JordanPartridge\GithubClient\Auth\GitHubAppAuthentication;
 use JordanPartridge\GithubClient\Resources\ActionsResource;
 use JordanPartridge\GithubClient\Resources\CommentsResource;
@@ -176,6 +177,19 @@ class Github
         $repo = Repo::fromFullName($fullName); // Ensures validation
 
         return $this->repos()->delete($repo);
+    }
+
+    /**
+     * Get the list of languages for a repository by full name.
+     *
+     * @param  string  $fullName  The full repository name (owner/repo)
+     * @return array<string, int> Associative array of language names to byte counts
+     */
+    public function getLanguages(string $fullName): array
+    {
+        $repo = Repo::fromFullName($fullName); // Validates the name
+
+        return $this->repos()->languages($repo);
     }
 
     /**
