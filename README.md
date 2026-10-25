@@ -195,6 +195,18 @@ $runs = Github::actions()->getWorkflowRuns('laravel', 'framework', $workflowId);
 Github::actions()->triggerWorkflow('laravel', 'framework', $workflowId, [
     'ref' => 'main',
 ]);
+
+// Get a specific workflow
+$workflow = Github::actions()->getWorkflow('laravel', 'framework', $workflowId);
+
+// Analyze workflow run success rate
+$successRate = Github::actions()->analyzeSuccessRate('laravel', 'framework', $workflowId);
+
+// Analyze average workflow run duration
+$avgDuration = Github::actions()->analyzeDuration('laravel', 'framework', $workflowId);
+
+// Get latest workflow run status
+$latestRun = Github::actions()->getLatestRun('laravel', 'framework', $workflowId);
 ```
 
 `ref` is required. `listWorkflows()` and `getWorkflowRuns()` return Saloon responses. Owner and repo are separate arguments.
@@ -218,7 +230,7 @@ The package does not retry rate-limited calls. A rate limit response throws `Rat
 | `commits()` | `all(owner/repo)`, `get(owner/repo, sha)` | `CommitData` |
 | `files()` | `all(owner/repo, sha)` | Saloon response |
 | `releases()` | `all`, `get`, `latest` | `ReleaseData` |
-| `actions()` | `listWorkflows`, `getWorkflowRuns`, `triggerWorkflow` | Saloon response |
+| `actions()` | `listWorkflows`, `getWorkflowRuns`, `getWorkflow`, `triggerWorkflow`, `getLatestWorkflowRuns`, `analyzeSuccessRate`, `analyzeDuration`, `getLatestRun` | `getWorkflow` returns Saloon response, analysis methods return arrays |
 | `comments()` | `forPullRequest`, `byAuthor`, `byAuthorType`, `bySeverity`, `forFile` | Pull request review comments. Pass `'repository' => 'owner/repo'` in the filters. `pullRequests()->comments($owner, $repo, $number)` is the direct call. |
 | `installations()` | `list`, `listAll`, `get`, `createAccessToken` | GitHub App installation data. Requires app authentication. |
 

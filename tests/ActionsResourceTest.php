@@ -236,4 +236,211 @@ describe('ActionsResource', function () {
             expect($response->status())->toBe(200);
         });
     });
+
+    describe('getWorkflow', function () {
+        it('can get a specific workflow by ID', function () {
+            $mockClient = new MockClient([
+                'repos/owner/repo/actions/workflows/161335' => MockResponse::make([
+                    'id' => 161335,
+                    'name' => 'CI',
+                    'path' => '.github/workflows/blank.yml',
+                    'state' => 'active',
+                    'created_at' => '2020-01-08T23:48:37.000Z',
+                    'updated_at' => '2020-01-08T23:50:21.000Z',
+                ], 200),
+            ]);
+
+            Github::connector()->withMockClient($mockClient);
+
+            $response = Github::actions()->getWorkflow('owner', 'repo', 161335);
+
+            $data = $response->json();
+            expect($data)
+                ->toBeArray()
+                ->and($data['name'])->toBe('CI')
+                ->and($response->status())->toBe(200);
+        });
+    });
+
+    describe('getLatestWorkflowRuns', function () {
+        it('can get the latest workflow runs', function () {
+            $mockClient = new MockClient([
+                'repos/owner/repo/actions/workflows/161335/runs*' => MockResponse::make([
+                    'total_count' => 2,
+                    'workflow_runs' => [
+                        [
+                            'id' => 30433642,
+                            'name' => 'Build',
+                            'status' => 'completed',
+                            'conclusion' => 'success',
+                            'created_at' => '2020-01-22T19:33:08Z',
+                            'updated_at' => '2020-01-22T19:35:08Z',
+                        ],
+                        [
+                            'id' => 30433641,
+                            'name' => 'Build',
+                            'status' => 'completed',
+                            'conclusion' => 'failure',
+                            'created_at' => '2020-01-21T19:33:08Z',
+                            'updated_at' => '2020-01-21T19:35:08Z',
+                        ],
+                    ],
+                ], 200),
+            ]);
+
+            Github::connector()->withMockClient($mockClient);
+
+            $runs = Github::actions()->getLatestWorkflowRuns('owner', 'repo', 161335, limit: 5);
+
+            expect($runs)
+                ->toBeArray()
+                ->toHaveCount(2)
+                ->and($runs[0]['conclusion'])->toBe('success')
+                ->and($runs[1]['conclusion'])->toBe('failure');
+        });
+
+        it('applies status filter', function () {
+            $mockClient = new MockClient([
+                '*' => MockResponse::make(['workflow_runs' => []], 200),
+            ]);
+
+            Github::connector()->withMockClient($mockClient);
+
+            $response = Github::actions()->getLatestWorkflowRuns(
+                'owner',
+                'repo',
+                161335,
+                limit: 10,
+                status: 'completed',
+            );
+
+            expect($response)->toBeArray();
+        });
+    });
+
+    describe('analyzeSuccessRate', function () {
+        it('correctly calculates success rate', function () {
+            $mockClient = new MockClient([
+                'repos/owner/repo/actions/workflows/161335/runs*' => MockResponse::make([
+                    'total_count' => 5,
+                    'workflow_runs' => [
+                        ['conclusion' => 'success', 'created_at' => '2020-01-22T19:33:08Z', 'updated_at' => '2020-01-22T19:35:08Z'],
+                        ['conclusion' => 'success', 'created_at' => '2020-01-22T19:33:08Z', 'updated_at' => '2020-01-22T19:35:08Z'],
+                        ['conclusion' => 'success', 'created_at' => '2020-01-22T19:33:08Z', 'updated_at' => '2020-01-22T19:35:08Z'],
+                        ['conclusion' => 'failure', 'created_at' => '2020-01-22T19:33:08Z', 'updated_at' => '2020-01-22T19:35:08Z'],
+                        ['conclusion' => 'skipped', 'created_at' => '2020-01-22T19:33:08Z', 'updated_at' => '2020-01-22T19:35:08Z'],
+                    ],
+                ], 200),
+            ]);
+
+            Github::connector()->withMockClient($mockClient);
+
+            $analysis = Github::actions()->analyzeSuccessRate('owner', 'repo', 161335, limit: 100);
+
+            expect($analysis)
+                ->toBeArray()
+                ->and($analysis['total'])->toBe(5)
+                ->and($analysis['success'])->toBe(3)
+                ->and($analysis['failure'])->toBe(1)
+                ->and($analysis['skipped'])->toBe(1)
+                ->and($analysis['success_rate'])->toBe(0.6);
+        });
+
+        it('returns zero when no runs exist', function () {
+            $mockClient = new MockClient([
+                '*' => MockResponse::make(['workflow_runs' => []], 200),
+            ]);
+
+            Github::connector()->withMockClient($mockClient);
+
+            $analysis = Github::actions()->analyzeSuccessRate('owner', 'repo', 161335, limit: 100);
+
+            expect($analysis['total'])->toBe(0)
+                ->and($analysis['success_rate'])->toBeNull();
+        });
+    });
+
+    describe('analyzeDuration', function () {
+        it('calculates average duration', function () {
+            $mockClient = new MockClient([
+                'repos/owner/repo/actions/workflows/161335/runs*' => MockResponse::make([
+                    'total_count' => 3,
+                    'workflow_runs' => [
+                        ['created_at' => '2020-01-22T19:33:08Z', 'updated_at' => '2020-01-22T19:35:08Z'],
+                        ['created_at' => '2020-01-22T20:33:08Z', 'updated_at' => '2020-01-22T20:38:08Z'],
+                        ['created_at' => '2020-01-22T21:33:08Z', 'updated_at' => '2020-01-22T21:34:08Z'],
+                    ],
+                ], 200),
+            ]);
+
+            Github::connector()->withMockClient($mockClient);
+
+            $analysis = Github::actions()->analyzeDuration('owner', 'repo', 161335, limit: 100);
+
+            expect($analysis)
+                ->toBeArray()
+                ->and($analysis['total'])->toBe(3)
+                ->and($analysis['avg_duration_seconds'])->toBe(160)
+                ->and($analysis['min_duration_seconds'])->toBe(60)
+                ->and($analysis['max_duration_seconds'])->toBe(300);
+        });
+
+        it('handles empty runs', function () {
+            $mockClient = new MockClient([
+                '*' => MockResponse::make(['workflow_runs' => []], 200),
+            ]);
+
+            Github::connector()->withMockClient($mockClient);
+
+            $analysis = Github::actions()->analyzeDuration('owner', 'repo', 161335, limit: 100);
+
+            expect($analysis['total'])->toBe(0)
+                ->and($analysis['avg_duration_seconds'])->toBeNull();
+        });
+    });
+
+    describe('getLatestRun', function () {
+        it('returns the latest run info when runs exist', function () {
+            $mockClient = new MockClient([
+                'repos/owner/repo/actions/workflows/161335/runs*' => MockResponse::make([
+                    'total_count' => 1,
+                    'workflow_runs' => [
+                        [
+                            'status' => 'completed',
+                            'conclusion' => 'success',
+                            'run_number' => 42,
+                            'created_at' => '2020-01-22T19:33:08Z',
+                            'updated_at' => '2020-01-22T19:35:08Z',
+                        ],
+                    ],
+                ], 200),
+            ]);
+
+            Github::connector()->withMockClient($mockClient);
+
+            $latestRun = Github::actions()->getLatestRun('owner', 'repo', 161335);
+
+            expect($latestRun)
+                ->toBeArray()
+                ->and($latestRun['status'])->toBe('completed')
+                ->and($latestRun['conclusion'])->toBe('success')
+                ->and($latestRun['run_number'])->toBe(42);
+        });
+
+        it('returns null values when no runs exist', function () {
+            $mockClient = new MockClient([
+                '*' => MockResponse::make(['workflow_runs' => []], 200),
+            ]);
+
+            Github::connector()->withMockClient($mockClient);
+
+            $latestRun = Github::actions()->getLatestRun('owner', 'repo', 161335);
+
+            expect($latestRun)
+                ->toBeArray()
+                ->and($latestRun['status'])->toBeNull()
+                ->and($latestRun['conclusion'])->toBeNull()
+                ->and($latestRun['run_number'])->toBeNull();
+        });
+    });
 });
