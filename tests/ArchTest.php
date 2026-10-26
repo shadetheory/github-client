@@ -8,6 +8,7 @@ describe('General', function () {
         expect(['dd', 'dump', 'ray'])->each->not->toBeUsed();
     });
 });
+
 describe('Resources', function () {
     arch('resources extend the base resource', function () {
         expect('JordanPartridge\GithubClient\Resources')->toExtend(BaseResource::class);
