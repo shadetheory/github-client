@@ -3,7 +3,6 @@
 namespace JordanPartridge\GithubClient\Requests;
 
 use Saloon\Enums\Method;
-use Saloon\Http\Request;
 
 class User extends Request
 {

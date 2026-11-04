@@ -47,4 +47,23 @@ return [
 
         'private_key_path' => env('GITHUB_APP_PRIVATE_KEY_PATH'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Retry Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure how the client retries rate-limited requests. The client will
+    | retry requests that return 429 (rate limit) by default.
+    |
+    */
+    'retry' => [
+        'max_attempts' => env('GITHUB_RETRY_MAX_ATTEMPTS', 3),
+
+        'delay' => env('GITHUB_RETRY_DELAY', 1000), // milliseconds
+
+        'only_on' => env('GITHUB_RETRY_ONLY_ON', [429]),
+
+        'use_exponential_backoff' => env('GITHUB_RETRY_USE_EXPONENTIAL_BACKOFF', false),
+    ],
 ];

@@ -25,6 +25,7 @@ use Saloon\Traits\Plugins\AcceptsJson;
  * - Multiple authentication sources (CLI, env, config)
  * - Helpful error messages for rate limits
  * - Context-aware exception handling
+ * - Automatic retry on rate limit errors (configurable via github-client.retry)
  */
 class GithubConnector extends Connector
 {
@@ -33,6 +34,28 @@ class GithubConnector extends Connector
     protected ?string $token;
     protected ?string $tokenSource;
     protected ?AuthenticationStrategy $authStrategy = null;
+
+    /**
+     * Determine if the request should be retried after a failure.
+     *
+     * @param \Saloon\Exceptions\Request\FatalRequestException|\Saloon\Exceptions\Request\RequestException $exception
+     * @param \Saloon\Http\Request $request
+     * @return bool
+     */
+    public function handleRetry(\Saloon\Exceptions\Request\FatalRequestException|\Saloon\Exceptions\Request\RequestException $exception, \Saloon\Http\Request $request): bool
+    {
+        $retryConfig = new \JordanPartridge\GithubClient\Data\RetryConfig(config('github-client.retry', []));
+
+        // Get the response from the exception
+        $response = $exception->getResponse();
+
+        // Check if the response status should trigger a retry
+        if (! in_array($response->status(), $retryConfig->onlyOn)) {
+            return false;
+        }
+
+        return true;
+    }
 
     /**
      * Create a new GitHub connector.
