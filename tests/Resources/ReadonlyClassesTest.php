@@ -11,8 +11,8 @@ use JordanPartridge\GithubClient\Resources\{
     ReleasesResource,
     RepoResource,
 };
-
 use ReflectionClass;
+use JordanPartridge\GithubClient\Resources\BaseResource;
 
 test('all resource classes are readonly', function () {
     $resources = [
@@ -34,6 +34,6 @@ test('all resource classes are readonly', function () {
 });
 
 test('BaseResource is readonly', function () {
-    $reflection = new ReflectionClass(\JordanPartridge\GithubClient\Resources\BaseResource::class);
+    $reflection = new ReflectionClass(BaseResource::class);
     expect($reflection->isReadOnly())->toBeTrue();
 });
