@@ -45,7 +45,7 @@ class GithubConnector extends Connector
      */
     public function __construct(
         string|AuthenticationStrategy|null $token = null,
-        ?GithubLogger $logger = null
+        ?GithubLogger $logger = null,
     ) {
         if ($token instanceof AuthenticationStrategy) {
             $this->authStrategy = $token;
@@ -330,6 +330,7 @@ class GithubConnector extends Connector
      * @param  Request  $request  The request to send
      * @param  MockClient|null  $mockClient  Optional mock client
      * @param  callable|null  $handleRetry  Optional retry handler
+     *
      * @return Response The response from the API
      */
     public function send(Request $request, ?MockClient $mockClient = null, ?callable $handleRetry = null): Response
@@ -369,8 +370,6 @@ class GithubConnector extends Connector
 
     /**
      * Refresh authentication token with event logging.
-     *
-     * @return void
      */
     public function refreshAuthToken(): void
     {
@@ -423,6 +422,7 @@ class GithubConnector extends Connector
     public function setLogger(GithubLogger $logger): self
     {
         $this->logger = $logger;
+
         return $this;
     }
 }

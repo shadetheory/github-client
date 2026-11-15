@@ -7,6 +7,9 @@ use Mockery as m;
 use Psr\Log\LoggerInterface;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
+use JordanPartridge\GithubClient\Exceptions\ResourceNotFoundException;
+use JordanPartridge\GithubClient\Requests\Repos\Get;
+use JordanPartridge\GithubClient\ValueObjects\Repo;
 
 describe('PSR Logger hook', function () {
     it('logs request start event', function () {
@@ -17,8 +20,8 @@ describe('PSR Logger hook', function () {
                 'Starting GitHub API request',
                 m::contains([
                     'event' => LogEvent::REQUEST_START->value,
-                    'request_class' => \JordanPartridge\GithubClient\Requests\Repos\Get::class,
-                ])
+                    'request_class' => Get::class,
+                ]),
             );
 
         $connector = new GithubConnector('test-token', new GithubLogger($mockLogger));
@@ -105,7 +108,7 @@ describe('PSR Logger hook', function () {
             ], 200),
         ]);
 
-        $connector->send(new \JordanPartridge\GithubClient\Requests\Repos\Get(\JordanPartridge\GithubClient\ValueObjects\Repo::fromFullName('owner/test-repo')), $mockClient);
+        $connector->send(new Get(Repo::fromFullName('owner/test-repo')), $mockClient);
     });
 
     it('logs request completion event', function () {
@@ -116,9 +119,9 @@ describe('PSR Logger hook', function () {
                 'GitHub API request completed',
                 m::contains([
                     'event' => LogEvent::REQUEST_COMPLETE->value,
-                    'request_class' => \JordanPartridge\GithubClient\Requests\Repos\Get::class,
+                    'request_class' => Get::class,
                     'status_code' => 200,
-                ])
+                ]),
             );
 
         $connector = new GithubConnector('test-token', new GithubLogger($mockLogger));
@@ -205,7 +208,7 @@ describe('PSR Logger hook', function () {
             ], 200),
         ]);
 
-        $connector->send(new \JordanPartridge\GithubClient\Requests\Repos\Get(\JordanPartridge\GithubClient\ValueObjects\Repo::fromFullName('owner/test-repo')), $mockClient);
+        $connector->send(new Get(Repo::fromFullName('owner/test-repo')), $mockClient);
     });
 
     it('logs request error event on failure', function () {
@@ -216,9 +219,9 @@ describe('PSR Logger hook', function () {
                 'GitHub API request failed',
                 m::contains([
                     'event' => LogEvent::REQUEST_ERROR->value,
-                    'request_class' => \JordanPartridge\GithubClient\Requests\Repos\Get::class,
-                    'exception_class' => \JordanPartridge\GithubClient\Exceptions\ResourceNotFoundException::class,
-                ])
+                    'request_class' => Get::class,
+                    'exception_class' => ResourceNotFoundException::class,
+                ]),
             );
 
         $connector = new GithubConnector('test-token', new GithubLogger($mockLogger));
@@ -228,8 +231,8 @@ describe('PSR Logger hook', function () {
         ]);
 
         try {
-            $connector->send(new \JordanPartridge\GithubClient\Requests\Repos\Get(\JordanPartridge\GithubClient\ValueObjects\Repo::fromFullName('owner/nonexistent')), $mockClient);
-        } catch (\JordanPartridge\GithubClient\Exceptions\ResourceNotFoundException $e) {
+            $connector->send(new Get(Repo::fromFullName('owner/nonexistent')), $mockClient);
+        } catch (ResourceNotFoundException $e) {
             // Expected
         }
     });
@@ -325,7 +328,7 @@ describe('PSR Logger hook', function () {
             ], 200),
         ]);
 
-        $connector->send(new \JordanPartridge\GithubClient\Requests\Repos\Get(\JordanPartridge\GithubClient\ValueObjects\Repo::fromFullName('owner/test-repo')), $mockClient);
+        $connector->send(new Get(Repo::fromFullName('owner/test-repo')), $mockClient);
 
         // Verify no requests to info that would contain body content
         $mockLogger->shouldHaveReceived('info')->times(2);
@@ -421,7 +424,7 @@ describe('PSR Logger hook', function () {
             ], 200),
         ]);
 
-        $connector->send(new \JordanPartridge\GithubClient\Requests\Repos\Get(\JordanPartridge\GithubClient\ValueObjects\Repo::fromFullName('owner/test-repo')), $mockClient);
+        $connector->send(new Get(Repo::fromFullName('owner/test-repo')), $mockClient);
 
         $mockLogger->shouldHaveReceived('info')->times(2);
     });
@@ -512,7 +515,7 @@ describe('PSR Logger hook', function () {
             ], 200),
         ]);
 
-        $response = $connector->send(new \JordanPartridge\GithubClient\Requests\Repos\Get(\JordanPartridge\GithubClient\ValueObjects\Repo::fromFullName('owner/test-repo')), $mockClient);
+        $response = $connector->send(new Get(Repo::fromFullName('owner/test-repo')), $mockClient);
 
         expect($response)->toBeSuccessful();
     });

@@ -34,7 +34,7 @@ class GithubLogger
                 'event' => LogEvent::REQUEST_START->value,
                 'request_class' => $requestClass,
                 ...$context,
-            ]
+            ],
         );
     }
 
@@ -56,7 +56,7 @@ class GithubLogger
                 'status_code' => $statusCode,
                 'duration_seconds' => $duration,
                 ...$context,
-            ]
+            ],
         );
     }
 
@@ -78,7 +78,7 @@ class GithubLogger
                 'exception_message' => $exception->getMessage(),
                 'exception_code' => $exception->getCode(),
                 ...$context,
-            ]
+            ],
         );
     }
 
@@ -96,7 +96,7 @@ class GithubLogger
                 'event' => LogEvent::AUTHENTICATION_REFRESH->value,
                 'strategy' => $strategy,
                 ...$context,
-            ]
+            ],
         );
     }
 
