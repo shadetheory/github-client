@@ -194,6 +194,7 @@ readonly class RepoResource extends BaseResource
      * Get the list of languages for a repository
      *
      * @param  Repo  $repo  The repository to get languages for
+     *
      * @return array<string, int> Associative array of language names to byte counts
      *
      * @link https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-repository-languages

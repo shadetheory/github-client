@@ -6,6 +6,7 @@ use JordanPartridge\GithubClient\Enums\Visibility;
 use JordanPartridge\GithubClient\Facades\Github;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
+use JordanPartridge\GithubClient\ValueObjects\Repo;
 
 beforeEach(function () {
     config(['github-client.token' => 'fake-token']);
@@ -262,7 +263,7 @@ describe('languages functionality', function () {
         ]);
         Github::connector()->withMockClient($mockClient);
 
-        $languages = Github::repos()->languages(\JordanPartridge\GithubClient\ValueObjects\Repo::fromFullName('testuser/test-repo'));
+        $languages = Github::repos()->languages(Repo::fromFullName('testuser/test-repo'));
 
         expect($languages)
             ->toBeArray()
@@ -298,7 +299,7 @@ describe('languages functionality', function () {
         ]);
         Github::connector()->withMockClient($mockClient);
 
-        $languages = Github::repos()->languages(\JordanPartridge\GithubClient\ValueObjects\Repo::fromFullName('testuser/test-repo'));
+        $languages = Github::repos()->languages(Repo::fromFullName('testuser/test-repo'));
 
         expect($languages)->toBeArray()->toHaveCount(0);
     });
