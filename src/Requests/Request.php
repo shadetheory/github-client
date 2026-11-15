@@ -4,6 +4,8 @@ namespace JordanPartridge\GithubClient\Requests;
 
 use Saloon\Http\Request as SaloonRequest;
 use JordanPartridge\GithubClient\Data\RetryConfig;
+use Saloon\Exceptions\Request\FatalRequestException;
+use Saloon\Exceptions\Request\RequestException;
 
 /**
  * Base request class with GitHub-specific functionality.
@@ -14,14 +16,10 @@ abstract class Request extends SaloonRequest
 {
     /**
      * Determine if the request should be retried after a failure.
-     *
-     * @param \Saloon\Exceptions\Request\FatalRequestException|\Saloon\Exceptions\Request\RequestException $exception
-     * @param \Saloon\Http\Request $request
-     * @return bool
      */
-    public function handleRetry(\Saloon\Exceptions\Request\FatalRequestException|\Saloon\Exceptions\Request\RequestException $exception, \Saloon\Http\Request $request): bool
+    public function handleRetry(FatalRequestException|RequestException $exception, SaloonRequest $request): bool
     {
-        $retryConfig = new \JordanPartridge\GithubClient\Data\RetryConfig(config('github-client.retry', []));
+        $retryConfig = new RetryConfig(config('github-client.retry', []));
 
         // Get the response from the exception
         $response = $exception->getResponse();

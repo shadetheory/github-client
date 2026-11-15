@@ -16,6 +16,10 @@ use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Http\Connector;
 use Saloon\Http\Response;
 use Saloon\Traits\Plugins\AcceptsJson;
+use JordanPartridge\GithubClient\Data\RetryConfig;
+use Saloon\Exceptions\Request\FatalRequestException;
+use Saloon\Exceptions\Request\RequestException;
+use Saloon\Http\Request;
 
 /**
  * GitHub API connector with optional authentication support.
@@ -37,14 +41,10 @@ class GithubConnector extends Connector
 
     /**
      * Determine if the request should be retried after a failure.
-     *
-     * @param \Saloon\Exceptions\Request\FatalRequestException|\Saloon\Exceptions\Request\RequestException $exception
-     * @param \Saloon\Http\Request $request
-     * @return bool
      */
-    public function handleRetry(\Saloon\Exceptions\Request\FatalRequestException|\Saloon\Exceptions\Request\RequestException $exception, \Saloon\Http\Request $request): bool
+    public function handleRetry(FatalRequestException|RequestException $exception, Request $request): bool
     {
-        $retryConfig = new \JordanPartridge\GithubClient\Data\RetryConfig(config('github-client.retry', []));
+        $retryConfig = new RetryConfig(config('github-client.retry', []));
 
         // Get the response from the exception
         $response = $exception->getResponse();
