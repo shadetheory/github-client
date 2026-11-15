@@ -9,7 +9,7 @@ use JordanPartridge\GithubClient\Cache\CacheStore;
 use Saloon\Http\PendingRequest;
 use Saloon\Http\Request;
 use Saloon\Http\Response;
-use Saloon\Traits\Plugins\AcceptsJson;
+use Saloon\Http\Faking\MockResponse;
 
 class CacheResponseMiddleware
 {
@@ -28,7 +28,7 @@ class CacheResponseMiddleware
      */
     public function __construct(
         CacheStore $cacheStore,
-        int $defaultTtl = 3600
+        int $defaultTtl = 3600,
     ) {
         $this->cacheStore = $cacheStore;
         $this->defaultTtl = $defaultTtl;
@@ -36,9 +36,6 @@ class CacheResponseMiddleware
 
     /**
      * Handle the request middleware.
-     *
-     * @param  \Saloon\Http\PendingRequest  $pendingRequest
-     * @return \Saloon\Http\PendingRequest
      */
     public function onRequest(PendingRequest $pendingRequest): PendingRequest
     {
@@ -59,7 +56,7 @@ class CacheResponseMiddleware
             $cachedResponse = $this->cacheStore->get($cacheKey);
 
             // Create a mock response from the cached data
-            $pendingRequest->setFakeResponse(new class($cachedResponse) extends \Saloon\Http\Faking\MockResponse {
+            $pendingRequest->setFakeResponse(new class ($cachedResponse) extends MockResponse {
                 private string $content;
 
                 public function __construct(string $content)
@@ -91,9 +88,6 @@ class CacheResponseMiddleware
 
     /**
      * Handle the response middleware.
-     *
-     * @param  \Saloon\Http\Response  $response
-     * @return \Saloon\Http\Response
      */
     public function onResponse(Response $response): Response
     {

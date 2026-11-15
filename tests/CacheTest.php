@@ -8,6 +8,10 @@ use JordanPartridge\GithubClient\Http\Middleware\CacheResponseMiddleware;
 use JordanPartridge\GithubClient\Requests\Repos\Get as GetRepoRequest;
 use JordanPartridge\GithubClient\ValueObjects\Repo;
 use Mockery as m;
+use Saloon\Enums\Method;
+use Saloon\Http\PendingRequest;
+use Saloon\Http\Request;
+use Saloon\Http\Response;
 
 test('cache key generator creates unique keys for different endpoints', function () {
     $repo = Repo::fromFullName('owner/repo');
@@ -87,9 +91,9 @@ test('cache response middleware caches get responses', function () {
     $request = new GetRepoRequest($repo);
 
     // Create a mock response
-    $mockResponse = m::mock(\Saloon\Http\Response::class);
+    $mockResponse = m::mock(Response::class);
     $mockResponse->shouldReceive('getRequest')->andReturn($request);
-    $mockResponse->shouldReceive('getMethod')->andReturn(\Saloon\Enums\Method::GET);
+    $mockResponse->shouldReceive('getMethod')->andReturn(Method::GET);
     $mockResponse->shouldReceive('successful')->andReturnTrue();
     $mockResponse->shouldReceive('body')->andReturn(json_encode(['id' => 123, 'name' => 'test']));
     $mockResponse->shouldReceive('json')->andReturn(['id' => 123, 'name' => 'test']);
@@ -111,14 +115,14 @@ test('cache response middleware does not cache non-get requests', function () {
     $repo = Repo::fromFullName('owner/repo');
 
     // Test with a request that uses POST (we'll mock it)
-    $postRequest = m::mock(\Saloon\Http\Request::class);
-    $postRequest->shouldReceive('getMethod')->andReturn(\Saloon\Enums\Method::POST);
+    $postRequest = m::mock(Request::class);
+    $postRequest->shouldReceive('getMethod')->andReturn(Method::POST);
     $postRequest->shouldReceive('resolveEndpoint')->andReturn('/repos/owner/repo');
 
     // Create a mock response
-    $mockResponse = m::mock(\Saloon\Http\Response::class);
+    $mockResponse = m::mock(Response::class);
     $mockResponse->shouldReceive('getRequest')->andReturn($postRequest);
-    $mockResponse->shouldReceive('getMethod')->andReturn(\Saloon\Enums\Method::POST);
+    $mockResponse->shouldReceive('getMethod')->andReturn(Method::POST);
     $mockResponse->shouldReceive('successful')->andReturnTrue();
     $mockResponse->shouldReceive('body')->andReturn(json_encode(['id' => 123]));
     $mockResponse->shouldReceive('json')->andReturn(['id' => 123]);
@@ -141,9 +145,9 @@ test('cache response middleware does not cache failed responses', function () {
     $request = new GetRepoRequest($repo);
 
     // Create a mock response with 404 status
-    $mockResponse = m::mock(\Saloon\Http\Response::class);
+    $mockResponse = m::mock(Response::class);
     $mockResponse->shouldReceive('getRequest')->andReturn($request);
-    $mockResponse->shouldReceive('getMethod')->andReturn(\Saloon\Enums\Method::GET);
+    $mockResponse->shouldReceive('getMethod')->andReturn(Method::GET);
     $mockResponse->shouldReceive('successful')->andReturnFalse();
     $mockResponse->shouldReceive('status')->andReturn(404);
 
@@ -167,8 +171,8 @@ test('cache response middleware can retrieve cached responses', function () {
     $store->put($cacheKey, json_encode(['id' => 456, 'name' => 'cached']), 3600);
 
     // Create a pending request
-    $pendingRequest = m::mock(\Saloon\Http\PendingRequest::class);
-    $pendingRequest->shouldReceive('getMethod')->andReturn(\Saloon\Enums\Method::GET);
+    $pendingRequest = m::mock(PendingRequest::class);
+    $pendingRequest->shouldReceive('getMethod')->andReturn(Method::GET);
     $pendingRequest->shouldReceive('getRequest')->andReturn($request);
     $pendingRequest->shouldReceive('getQuery')->andReturn([]);
     $pendingRequest->shouldReceive('hasCacheDisabled')->andReturn(false);

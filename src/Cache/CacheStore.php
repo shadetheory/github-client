@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace JordanPartridge\GithubClient\Cache;
 
-use Saloon\Http\Request;
-use Saloon\Http\Response;
-
 interface CacheStore
 {
     /**
@@ -22,7 +19,7 @@ interface CacheStore
     /**
      * Store an item in the cache.
      *
-     * @param int $ttl Time to live in seconds
+     * @param  int  $ttl  Time to live in seconds
      */
     public function put(string $key, string $value, int $ttl): void;
 

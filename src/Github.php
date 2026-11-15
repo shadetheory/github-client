@@ -264,9 +264,8 @@ class Github
     /**
      * Enable caching for this GitHub client instance.
      *
-     * @param  \JordanPartridge\GithubClient\Cache\CacheStore  $store  The cache store to use
+     * @param  CacheStore  $store  The cache store to use
      * @param  int  $ttl  Default TTL in seconds (default: 1 hour)
-     * @return self
      */
     public function cache(CacheStore $store, int $ttl = 3600): self
     {

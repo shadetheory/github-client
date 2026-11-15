@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace JordanPartridge\GithubClient\Cache;
 
 use JordanPartridge\GithubClient\Requests\Repos\Get as GetRepoRequest;
-use JordanPartridge\GithubClient\ValueObjects\Repo as RepoValue;
 use Saloon\Http\Request;
 
 class CacheKeyGenerator
@@ -21,7 +20,7 @@ class CacheKeyGenerator
             return $baseKey;
         }
 
-        return $baseKey.'?'.http_build_query($query);
+        return $baseKey . '?' . http_build_query($query);
     }
 
     /**
@@ -32,7 +31,7 @@ class CacheKeyGenerator
         $method = $request->getMethod()->value;
         $endpoint = $request->resolveEndpoint();
 
-        return 'github-client:'.strtolower($method).':'.$endpoint;
+        return 'github-client:' . strtolower($method) . ':' . $endpoint;
     }
 
     /**

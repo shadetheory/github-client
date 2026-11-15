@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace JordanPartridge\GithubClient\Traits;
 
+use Saloon\Http\Request;
+
 /**
- * @mixin \Saloon\Http\Request
+ * @mixin Request
  */
 trait HasCacheSettings
 {

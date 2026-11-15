@@ -33,7 +33,7 @@ class LaravelCacheStore implements CacheStore
     public function __construct(
         CacheRepository $cache,
         string $prefix = 'github-client:',
-        int $defaultTtl = 3600
+        int $defaultTtl = 3600,
     ) {
         $this->cache = $cache;
         $this->prefix = $prefix;
@@ -45,7 +45,7 @@ class LaravelCacheStore implements CacheStore
      */
     protected function getFullKey(string $key): string
     {
-        return $this->prefix.$key;
+        return $this->prefix . $key;
     }
 
     /**
